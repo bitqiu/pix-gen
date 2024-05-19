@@ -6,14 +6,17 @@ import (
 	"math"
 )
 
+// 声明双线性插值的全局变量
 var bili = Bilinear{}
 
+// 定义 Bilinear 结构体
 type Bilinear struct{}
 
+// 双线性插值方法，根据给定的坐标获取插值后的颜色值
 func (Bilinear) RGBA(src *image.RGBA, x, y float64) color.RGBA {
 	p := findLinearSrc(src.Bounds(), x, y)
 
-	// Array offsets for the surrounding pixels.
+	// 获取周围像素的偏移量
 	off00 := offRGBA(src, p.low.X, p.low.Y)
 	off01 := offRGBA(src, p.high.X, p.low.Y)
 	off10 := offRGBA(src, p.low.X, p.high.Y)
@@ -49,14 +52,15 @@ func (Bilinear) RGBA(src *image.RGBA, x, y float64) color.RGBA {
 	return c
 }
 
+// BilinearSrc 结构体，用于存储插值所需的参数
 type BilinearSrc struct {
-	// Top-left and bottom-right interpolation sources
+	// 左上角和右下角的插值源
 	low, high image.Point
-	// Fraction of each pixel to take. The 0 suffix indicates
-	// top/left, and the 1 suffix indicates bottom/right.
+	// 每个像素的权重，0 后缀表示上/左，1 后缀表示下/右
 	frac00, frac01, frac10, frac11 float64
 }
 
+// findLinearSrc 查找双线性插值的源像素
 func findLinearSrc(b image.Rectangle, sx, sy float64) BilinearSrc {
 	maxX := float64(b.Max.X)
 	maxY := float64(b.Max.Y)
@@ -80,10 +84,9 @@ func findLinearSrc(b image.Rectangle, sx, sy float64) BilinearSrc {
 		highY = maxY - 1
 	}
 
-	// In the variables below, the 0 suffix indicates top/left, and the
-	// 1 suffix indicates bottom/right.
+	// 下述变量中的 0 后缀表示上/左，1 后缀表示下/右
 
-	// Center of each surrounding pixel.
+	// 每个周围像素的中心
 	x00 := lowX + 0.5
 	y00 := lowY + 0.5
 	x01 := highX + 0.5
@@ -98,8 +101,7 @@ func findLinearSrc(b image.Rectangle, sx, sy float64) BilinearSrc {
 		high: image.Pt(int(highX), int(highY)),
 	}
 
-	// Literally, edge cases. If we are close enough to the edge of
-	// the image, curtail the interpolation sources.
+	// 边缘情况处理。如果我们足够接近图像的边缘，限制插值源
 	if lowX == highX && lowY == highY {
 		p.frac00 = 1.0
 	} else if sy-minY <= 0.5 && sx-minX <= 0.5 {
@@ -128,6 +130,7 @@ func findLinearSrc(b image.Rectangle, sx, sy float64) BilinearSrc {
 	return p
 }
 
+// offRGBA 获取给定坐标的像素偏移量
 func offRGBA(src *image.RGBA, x, y int) int {
 	return (y-src.Rect.Min.Y)*src.Stride + (x-src.Rect.Min.X)*4
 }

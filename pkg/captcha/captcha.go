@@ -13,32 +13,36 @@ import (
 	"time"
 )
 
+// Captcha 结构体定义了验证码的属性
 type Captcha struct {
-	frontColors []color.Color
-	bkgColors   []color.Color
-	disturlvl   DisturLevel
-	fonts       []*truetype.Font
-	size        image.Point
+	frontColors []color.Color    // 前景色
+	bkgColors   []color.Color    // 背景色
+	disturlvl   DisturLevel      // 干扰级别
+	fonts       []*truetype.Font // 字体
+	size        image.Point      // 图片大小
 }
 
+// StrType 定义了字符串类型的枚举
 type StrType int
 
 const (
 	NUM   StrType = iota // 数字
 	LOWER                // 小写字母
 	UPPER                // 大写字母
-	ALL                  // 全部
+	ALL                  // 全部字符
 	CLEAR                // 去除部分易混淆的字符
 )
 
+// DisturLevel 定义了干扰级别的枚举
 type DisturLevel int
 
 const (
-	NORMAL DisturLevel = 4
-	MEDIUM DisturLevel = 8
-	HIGH   DisturLevel = 16
+	NORMAL DisturLevel = 4  // 正常干扰
+	MEDIUM DisturLevel = 8  // 中等干扰
+	HIGH   DisturLevel = 16 // 高度干扰
 )
 
+// New 创建一个新的 Captcha 实例
 func New() *Captcha {
 	c := &Captcha{
 		disturlvl: NORMAL,
@@ -49,7 +53,7 @@ func New() *Captcha {
 	return c
 }
 
-// AddFont 添加一个字体
+// AddFont 添加一个字体文件
 func (c *Captcha) AddFont(path string) error {
 	fontdata, erro := ioutil.ReadFile(path)
 	if erro != nil {
@@ -66,7 +70,7 @@ func (c *Captcha) AddFont(path string) error {
 	return nil
 }
 
-// AddFontFromBytes allows to load font from slice of bytes, for example, load the font packed by https://github.com/jteeuwen/go-bindata
+// AddFontFromBytes 从字节切片中加载字体
 func (c *Captcha) AddFontFromBytes(contents []byte) error {
 	font, err := freetype.ParseFont(contents)
 	if err != nil {
@@ -79,7 +83,7 @@ func (c *Captcha) AddFontFromBytes(contents []byte) error {
 	return nil
 }
 
-// SetFont 设置字体 可以设置多个
+// SetFont 设置字体，可以设置多个
 func (c *Captcha) SetFont(paths ...string) error {
 	for _, v := range paths {
 		if erro := c.AddFont(v); erro != nil {
@@ -89,12 +93,14 @@ func (c *Captcha) SetFont(paths ...string) error {
 	return nil
 }
 
+// SetDisturbance 设置干扰级别
 func (c *Captcha) SetDisturbance(d DisturLevel) {
 	if d > 0 {
 		c.disturlvl = d
 	}
 }
 
+// SetFrontColor 设置前景色
 func (c *Captcha) SetFrontColor(colors ...color.Color) {
 	if len(colors) > 0 {
 		c.frontColors = c.frontColors[:0]
@@ -104,6 +110,7 @@ func (c *Captcha) SetFrontColor(colors ...color.Color) {
 	}
 }
 
+// SetBkgColor 设置背景色
 func (c *Captcha) SetBkgColor(colors ...color.Color) {
 	if len(colors) > 0 {
 		c.bkgColors = c.bkgColors[:0]
@@ -113,6 +120,7 @@ func (c *Captcha) SetBkgColor(colors ...color.Color) {
 	}
 }
 
+// SetSize 设置图片大小
 func (c *Captcha) SetSize(w, h int) {
 	if w < 48 {
 		w = 48
@@ -123,20 +131,21 @@ func (c *Captcha) SetSize(w, h int) {
 	c.size = image.Point{w, h}
 }
 
+// randFont 随机选择一个字体
 func (c *Captcha) randFont() *truetype.Font {
 	return c.fonts[rand.Intn(len(c.fonts))]
 }
 
-// 绘制背景
+// drawBkg 绘制背景
 func (c *Captcha) drawBkg(img *Image) {
 	ra := rand.New(rand.NewSource(time.Now().UnixNano()))
-	//填充主背景色
+	// 填充主背景色
 	bgcolorindex := ra.Intn(len(c.bkgColors))
 	bkg := image.NewUniform(c.bkgColors[bgcolorindex])
 	img.FillBkg(bkg)
 }
 
-// 绘制噪点
+// drawNoises 绘制噪点
 func (c *Captcha) drawNoises(img *Image) {
 	ra := rand.New(rand.NewSource(time.Now().UnixNano()))
 
@@ -166,9 +175,8 @@ func (c *Captcha) drawNoises(img *Image) {
 
 }
 
-// 绘制文字
+// drawString 绘制文字
 func (c *Captcha) drawString(img *Image, str string) {
-
 	if c.fonts == nil {
 		panic("没有设置任何字体")
 	}
@@ -189,11 +197,10 @@ func (c *Captcha) drawString(img *Image, str string) {
 		// 创建单个文字图片
 		// 以文字为尺寸创建正方形的图形
 		str := NewImage(fsize, fsize)
-		// str.FillBkg(image.NewUniform(color.Black))
 		// 随机取一个前景色
 		colorindex := r.Intn(len(c.frontColors))
 
-		//随机取一个字体
+		// 随机取一个字体
 		font := c.randFont()
 		str.DrawString(font, c.frontColors[colorindex], string(char), float64(fsize))
 
@@ -207,7 +214,7 @@ func (c *Captcha) drawString(img *Image, str string) {
 		draw.Draw(tmp, image.Rect(left, top, left+s.X, top+s.Y), rs, image.ZP, draw.Over)
 	}
 	if c.size.Y >= 48 {
-		// 高度大于48添加波纹 小于48波纹影响用户识别
+		// 高度大于48添加波纹，小于48波纹影响用户识别
 		tmp.distortTo(float64(fsize)/10, 200.0)
 	}
 
@@ -220,20 +227,19 @@ func (c *Captcha) Create(num int, t StrType) (*Image, string) {
 		num = 4
 	}
 	dst := NewImage(c.size.X, c.size.Y)
-	//tmp := NewImage(c.size.X, c.size.Y)
 	c.drawBkg(dst)
 	c.drawNoises(dst)
 
 	str := string(c.randStr(num, int(t)))
 	c.drawString(dst, str)
-	//c.drawString(tmp, str)
 
 	return dst, str
 }
 
+// CreateCustom 生成自定义字符串的验证码图片
 func (c *Captcha) CreateCustom(str string) *Image {
 	if len(str) == 0 {
-		str = "unkown"
+		str = "unknown"
 	}
 	dst := NewImage(c.size.X, c.size.Y)
 	c.drawBkg(dst)
@@ -242,11 +248,15 @@ func (c *Captcha) CreateCustom(str string) *Image {
 	return dst
 }
 
-var fontKinds = [][]int{[]int{10, 48}, []int{26, 97}, []int{26, 65}}
+var fontKinds = [][]int{
+	{10, 48}, // 数字
+	{26, 97}, // 小写字母
+	{26, 65}, // 大写字母
+}
 var letters = []byte("34578acdefghjkmnpqstwxyABCDEFGHJKMNPQRSVWXY")
 
-// 生成随机字符串
-// size 个数 kind 模式
+// randStr 生成随机字符串
+// size 字符个数，kind 模式
 func (c *Captcha) randStr(size int, kind int) []byte {
 	ikind, result := kind, make([]byte, size)
 	isAll := kind > 2 || kind < 0

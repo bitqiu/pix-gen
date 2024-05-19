@@ -4,7 +4,7 @@
 
 ### URL
 
-> GET http://localhost:8080/captcha?code={code}&width={width}&height={height}
+> GET /captcha?code={code}&width={width}&height={height}
 
 ### 参数
 
@@ -14,13 +14,13 @@
 
 示例请求：
 
-> GET http://localhost:8080/captcha?code=abcdef&width=120&height=30
+> GET /captcha?code=abcdef&width=120&height=30
 
 ## 二维码图片生成
 
 ### URL
 
-> GET http://localhost:8080/qrcode?text={text}&size={size}&level={level}&color={color}
+> GET /qrcode?text={text}&size={size}&level={level}&color={color}
 
 ### 参数
 
@@ -31,4 +31,4 @@
 
 示例请求：
 
-> GET http://localhost:8080/qrcode?text=helloworld&size=400&level=L&color=549ecc
+> GET /qrcode?text=helloworld&size=400&level=L&color=549ecc

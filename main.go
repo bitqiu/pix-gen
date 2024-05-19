@@ -8,7 +8,6 @@ import (
 
 func main() {
 	r := gin.Default()
-	// cors
 	config := cors.DefaultConfig()
 	config.AllowCredentials = true
 	config.AllowOrigins = []string{"*"}
